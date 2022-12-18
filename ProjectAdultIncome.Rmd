@@ -1,0 +1,309 @@
+---
+title: 'Project: Adult Census Income'
+output:
+  word_document: default
+---
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+Adult Data Set also known as Census Income from the UCI Machine Learning Repository is used for a classification problem. The goal is to determine whether a person makes more or less than $50K a year using multiple machine learning algorithms.
+
+### Exploratory Data Analysis 
+```{r}
+library(readr)
+adult <- read_csv("C:/Users/lamiae/Downloads/adult.data")
+dim(adult)
+
+```
+The dataset has 32560 observations and 15 columns. 
+
+#### Input/output variables
+Changing the column names of the adult dataset and checking their data format :
+```{r}
+colnames(adult) <- c("Age", "WorkClass","FinalWeight", "Education", "EdYear", "MaritalStatus",
+                     "Occupation", "Relationship", "Race", "Gender","CapitalGain",
+                     "CapitalLoss","HoursperWeek","NativeCountry","Income")
+sapply(adult,class)
+```
+  * Age: Age of the individual 
+      + continuous
+  * WorkClass: Employment status of the individual 
+      + Private, Self-emp-not-inc, Self-emp-inc, Federal-gov, Local-gov, State-gov, Without-pay, Never-worked.
+  * FinalWeight: Census number representing the individual (might not be used for the analyis)
+     + continuous.
+  * Education: Highest level of education the individual achieved
+    + Bachelors, Some-college, 11th, HS-grad, Prof-school, Assoc-acdm, Assoc-voc, 9th, 7th-8th, 12th, Masters, 1st-4th, 10th, Doctorate, 5th-6th, Preschool.
+  * EdYear: Number of education years
+    + continuous.
+  * MaritalStatus: Marital status of the individual
+    + Married-civ-spouse, Divorced, Never-married, Separated, Widowed, Married-spouse-absent, Married-AF-spouse.
+  * 0ccupation: Type of occupation of the individual
+    + Tech-support, Craft-repair, Other-service, Sales, Exec-managerial, Prof-specialty, Handlers-cleaners, Machine-op-inspct, Adm-clerical, Farming-fishing, Transport-moving, Priv-house-serv, Protective-serv, Armed-Forces.
+  * Relationship: relation of the individual to others 
+    + Wife, Own-child, Husband, Not-in-family, Other-relative, Unmarried.
+  * Race: Race of the individual
+    + White, Asian-Pac-Islander, Amer-Indian-Eskimo, Other, Black.
+  * Gender: Gender of the individual 
+    + Female, Male.
+  * CapitalGain: : Capital gain for the individual
+    + continuous.
+  * CapitalLoss: Capital loss for the individual
+    + continuous.
+  * HoursperWeek: number of hours the individual works per week
+    + continuous.
+  * NativeCountry: Country of origin  
+    + United-States, Cambodia, England, Puerto-Rico, Canada, Germany, Outlying-US(Guam-USVI-etc), India, Japan, Greece, South, China, Cuba, Iran, Honduras, Philippines, Italy, Poland, Jamaica, Vietnam, Mexico, Portugal, Ireland, France, Dominican-Republic, Laos, Ecuador, Taiwan, Haiti, Columbia, Hungary, Guatemala, Nicaragua, Scotland, Thailand, Yugoslavia, El-Salvador, Trinadad&Tobago, Peru, Hong, Holand-Netherlands.
+  * Income: If the individual makes more or less than $50,000 annually. This is the response variable 
+    + <=50k, >50k
+
+The summary of the variables is given below:
+```{r}
+summary(adult)
+```
+No missing values or NA exist in the dataset. 
+
+Looking at the distribution of the response variable income, we find 76% to 24% split for less than 50K and more than 50K
+```{r}
+# distribution of income 
+cbind(freq= table(adult$Income), perecentage = prop.table(table(adult$Income))*100)
+```
+
+
+### Data Visualization 
+
+Looking at the variables ditributions 
+
+```{r}
+# Age distribution 
+hist(adult$Age)
+barplot(table(adult$Income, adult$Age) , main=names(adult)[1],
+        legend.text=unique(adult$Income))
+
+
+```
+
+
+A better way to use the Age attribute in the analysis of income is by creating some age groups
+
+```{r}
+adult$Age<- as.factor(ifelse(adult$Age <=20, '<=20',
+                      ifelse(adult$Age <=30, '<=30',
+                      ifelse(adult$Age <=40, '<=40',
+                      ifelse(adult$Age <=50, '<=50',
+                      ifelse(adult$Age <=60, '<=60',
+                      ifelse(adult$Age <=70, '<=70',
+                      ifelse(adult$Age <=80, '<=80','<=90'))))))))
+barplot(table(adult$Income, adult$Age) , main=names(adult)[1],
+        legend.text=unique(adult$Income))   
+           
+```
+
+Looking at this bar plot, we can see that there is a variance between income >50K and <=50K and age of the individual. Individuals aged less than 20 and from 72 to 90 have an income lower than $5000, whereas individuals in their late 20's, up to their 60's have significantly different ratios of >50K and <=50K.
+
+```{r  echo=TRUE, fig.height=8, fig.width=15}
+# Work Class 
+barplot(table(adult$Income, adult$WorkClass) , main=names(adult)[2],
+        legend.text=unique(adult$Income))
+
+```
+
+The ? means unknown work class. From the plot,we can see that most of the individuals work in the private sector. All the work classes have similar ratio of income except the self-emp-inc which represents individuals who own their own companies and have high incomes. 
+
+
+
+```{r echo=TRUE, fig.height=8, fig.width=20}
+# Education 
+barplot(table(adult$Income, adult$Education) , main=names(adult)[4],
+        legend.text=unique(adult$Income))
+```
+
+Looking at the distribution of the education level of the individuals in this census, most of them have at most a high school degree and only a few have a doctorate degree. Clearly, the higher the education the higher the income is >50K 
+
+```{r}
+# Education Years 
+barplot(table(adult$Income, adult$EdYear) , main=names(adult)[5],
+        legend.text=unique(adult$Income))
+```
+Education and EdYear have similar distributions because EdYear is the number form of Education which represent the highest level of education achieved by the individual. Therefore, only one of these variables will be used in the analysis. 
+```{r echo=TRUE, fig.height=8, fig.width=15}
+
+barplot(table(adult$Income, adult$MaritalStatus) , main=names(adult)[6],
+        legend.text=unique(adult$Income))
+```
+
+The plot shows that most of the individuals in the dataset are married followed by Nevermarried. The ratio of <=50K is very high for most of the marital status except for married individuals who can achieve an income greater than 50K.
+
+```{r echo=TRUE, fig.height=8, fig.width=15}
+barplot(table(adult$Income, adult$Relationship) , main=names(adult)[8],
+        legend.text=unique(adult$Income))
+```
+
+The variable relationship provides similar information as the MaritalStatus variable. Therefore it will not be included in the analysis of income.   
+
+```{r echo=TRUE, fig.height=8, fig.width=25}
+
+barplot(table(adult$Income, adult$Occupation) , main=names(adult)[7],
+        legend.text=unique(adult$Income))
+```
+
+Looking at the occupation plot,The income vary significantly with different occupations. For instance, Exec-managerial and prof-specialty have higher percentages of
+incomes greater than 50K, whereas Farming-fishing, Other-service and Handlers-cleaners have significantly lower income than the other occupations.
+
+
+```{r echo=TRUE, fig.height=8, fig.width=10}
+# race
+barplot(table(adult$Income, adult$Race) , main=names(adult)[9],
+        legend.text=unique(adult$Income))
+```
+
+The plot shows that white is the largest represented race in the dataset followed by black and that white has the highest income greater than $50K followed by asian than black. This variable is not used for the analysis because of the disproportion of the distribution of the race attribute.
+
+```{r}
+# Gender
+barplot(table(adult$Income, adult$Gender) , main=names(adult)[10],
+        legend.text=unique(adult$Income))
+```
+Male individuals are represented almost twice more than females in the dataset and their percentage of high income is greater than that of females. This variation can be important for the income analysis. 
+```{r}
+#capital gain/loss
+adult$CapitalGain <- as.factor(ifelse(adult$CapitalGain >0, '>0', '=0'))
+
+barplot(table(adult$Income, adult$CapitalGain) , main=names(adult)[11],
+        legend.text=unique(adult$Income))
+
+adult$CapitalLoss <- as.factor(ifelse(adult$CapitalLoss >0, '>0', '=0'))
+barplot(table(adult$Income, adult$CapitalLoss) , main=names(adult)[12],
+        legend.text=unique(adult$Income))
+```
+
+Both variables have high zero values, therefore Capital gain and Capital Loss will not be used in the analysis. 
+
+```{r}
+hist(adult$HoursperWeek)
+barplot(table(adult$Income, adult$HoursperWeek) , main=names(adult)[13],
+        legend.text=unique(adult$Income))
+```
+
+For better visualization and understanding of the hours per week variable, let's create a new variable with 3 values:
+   * >40 : Individual works less than 40 hours per week
+   * =40 : Individual works exactly 40 hours per week
+   * <40 : Individual works more than 40 hours per week
+   
+```{r}
+adult$WorkHours <- as.factor(ifelse(adult$HoursperWeek < 40, '<40',
+                             ifelse(adult$HoursperWeek == 40, '=40', '>40')))
+barplot(table(adult$Income, adult$WorkHours) , main=names(adult)[16],
+        legend.text=unique(adult$Income))
+```
+
+Most individuals in the dataset work exactly 40 hours per week. From this plot, we can see that the more hours an individual works the higher the proportion of income <50K is.   
+
+```{r echo=TRUE, fig.height=8, fig.width=20}
+barplot(table(adult$Income, adult$NativeCountry) , main=names(adult)[14],
+        legend.text=unique(adult$Income))
+```
+
+
+The NativeCountry variable is not going to be included in the analysis because of the disproportional distribution of its values. 
+
+Therefore, the unnecessary variables are removed from the dataset. 
+
+```{r}
+# removing some attributes
+adult<-adult[,c(-3,-5,-8,-9,-11,-12,-13,-14)]
+colnames(adult)
+```
+The variables listed above are the only ones used in the analysis.
+
+
+### Classification Analysis
+
+The algorithms used in this classification project are linear discriminant analysis, logistic regression, support vector machines and Classification trees. 
+
+#### Data Partition 
+Splitting the adult dataset to 75% training and 25% testing datasets 
+```{r}
+#Splitting datasets
+library(caret)
+set.seed(123)
+inTrain = createDataPartition(adult$Income, p = .75, list = FALSE)
+train.data=adult[inTrain,]
+test.data=adult[-inTrain,]
+```
+
+#### Linear Discriminant Analysis
+```{r}
+library(MASS)
+
+# fit lda model
+model.lda<- lda(Income~.,data=train.data)
+
+# Using the testing set to evaluate the classification performance
+predictions.lda = data.frame(predict(model.lda, test.data))
+confusionM.lda<-confusionMatrix(predictions.lda$class,as.factor(test.data$Income))
+#print(confusionM.lda$table)
+print(confusionM.lda)
+```
+
+
+#### Logistic Regression
+```{r}
+library(nnet)
+library(tidyverse)
+# Fit the model
+model.logReg <- nnet::multinom(Income ~., data = train.data)
+# Summarize the model
+summary(model.logReg)
+# Make predictions
+predicted.logReg <- model.logReg %>% predict(test.data)
+# Model accuracy
+mean(predicted.logReg == test.data$Income)
+# confusion matrix
+confusionM.logReg<-confusionMatrix(predicted.logReg, as.factor(test.data$Income))
+print(confusionM.logReg)
+```
+
+
+#### Support Vector Machines
+
+```{r}
+library(e1071)
+
+svmfit = svm(as.factor(Income) ~ ., data = test.data, kernel = "radial", cost = 10, scale = FALSE)
+print(svmfit)
+test.svm<-predict(svmfit,data=test.data)
+ConfusionM.svm<-confusionMatrix(test.svm,as.factor(test.data$Income))
+print(ConfusionM.svm)
+```
+
+#### Naive Bayes Classifier 
+```{r}
+NBclassfier=naiveBayes(as.factor(Income)~., data=train.data)
+test.NB=predict(NBclassfier, newdata = test.data, type = "class")
+confusionM.NB<-confusionMatrix(test.NB,as.factor(test.data$Income))
+print(confusionM.NB)
+```
+
+
+
+### Conclusion
+In this analysis census data is used to analyze the income of adults based on the following characteristics: individual's age, gender, work class, education, marital status, occupation, and work hours.   
+The methods used  are linear discriminant, logistic regression, support vector machines, and naive bayes classifier to classify the income of individuals into two categories: less than 50K or greater than or equal to 50K. 
+The accuracy of the models used in this analysis is as follows:
+
+```{r}
+# Model performance metrics
+data.frame(
+  Model = c("LDA", "Log Reg", "SVM", "NBC"),
+  Accuracy = c(confusionM.lda$overall[1], confusionM.logReg$overall[1], ConfusionM.svm$overall[1], confusionM.NB$overall[1])
+)
+
+```
+
+From these results, it can be seen that all the models have a high accuracy in classifying the adult's income. However, support vector machines is more accurate. For possible improvements, parameter tuning can be applied in order to achieve a higher accuracy, also less attributes can be used  
+
+
+
+
+
+
